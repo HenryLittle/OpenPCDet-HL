@@ -30,15 +30,33 @@ MODEL:
         NAME: CenterHead
         CLASS_AGNOSTIC: False
 
-        USE_DIRECTION_CLASSIFIER: False 
+        CLASS_NAMES_EACH_HEAD: [
+            ['Car', 'Pedestrian', 'Cyclist']
+        ]
+
+        SHARED_CONV_CHANNEL: 64
+        USE_BIAS_BEFORE_NORM: True
+        NUM_HM_CONV: 2
+        SEPARATE_HEAD_CFG:
+            HEAD_ORDER: ['center', 'center_z', 'dim', 'rot']
+            HEAD_DICT: {
+                'center': {'out_channels': 2, 'num_conv': 2},
+                'center_z': {'out_channels': 1, 'num_conv': 2},
+                'dim': {'out_channels': 3, 'num_conv': 2},
+                'rot': {'out_channels': 2, 'num_conv': 2},
+            }
+
+        # USE_DIRECTION_CLASSIFIER: False 
 
         TARGET_ASSIGNER_CONFIG:
             MAX_OBJS: 100
-            VOXEL_SIZE: [0.05, 0.05, 0.1]
-            OUT_SIZE_FACTOR: 4 
+            # VOXEL_SIZE: [0.05, 0.05, 0.1]
+            FEATURE_MAP_STRIDE: 8
+            # OUT_SIZE_FACTOR: 4 
+            NUM_MAX_OBJS: 500
             GAUSSIAN_OVERLAP: 0.1
             MIN_RADIUS: 2
-            BOX_CODER: ResidualCoder
+            # BOX_CODER: ResidualCoder
 
         LOSS_CONFIG:
             LOSS_WEIGHTS: {
