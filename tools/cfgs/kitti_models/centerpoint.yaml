@@ -49,21 +49,31 @@ MODEL:
         # USE_DIRECTION_CLASSIFIER: False 
 
         TARGET_ASSIGNER_CONFIG:
-            MAX_OBJS: 100
-            # VOXEL_SIZE: [0.05, 0.05, 0.1]
-            FEATURE_MAP_STRIDE: 8
+            ## FEATURE_MAP_STRIDE: 8
+            FEATURE_MAP_STRIDE: 4
             # OUT_SIZE_FACTOR: 4 
-            NUM_MAX_OBJS: 500
+            NUM_MAX_OBJS: 100
             GAUSSIAN_OVERLAP: 0.1
             MIN_RADIUS: 2
             # BOX_CODER: ResidualCoder
 
         LOSS_CONFIG:
             LOSS_WEIGHTS: {
-                'cls_weight': 1.0,
-                'loc_weight': 2.0,
+                'cls_weight': 1.0, # weight for headmap
+                'loc_weight': 2.0, # weight for localization codes
                 'code_weights': [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
             }
+        
+        POST_PROCESSING: # Post processing for center_head
+            SCORE_THRESH: 0.1
+            POST_CENTER_LIMIT_RANGE: [0, -40, -3, 70.4, 40, 1] # should align with point cloud range
+            # POST_CENTER_LIMIT_RANGE: [-75.2, -75.2, -2, 75.2, 75.2, 4]
+            MAX_OBJ_PER_SAMPLE: 100
+            NMS_CONFIG:
+                NMS_TYPE: nms_gpu
+                NMS_THRESH: 0.7
+                NMS_PRE_MAXSIZE: 4096
+                NMS_POST_MAXSIZE: 500
 
     POST_PROCESSING:
         RECALL_THRESH_LIST: [0.3, 0.5, 0.7]

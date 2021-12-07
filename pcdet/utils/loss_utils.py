@@ -266,9 +266,9 @@ def neg_loss_cornernet(pred, gt, mask=None):
     Refer to https://github.com/tianweiy/CenterPoint.
     Modified focal loss. Exactly the same as CornerNet. Runs faster and costs a little bit more memory
     Args:
-        pred: (batch x c x h x w)
-        gt: (batch x c x h x w)
-        mask: (batch x h x w)
+        pred: (batch c h w)
+        gt:   (batch c h w)
+        mask: (batch h w)
     Returns:
     """
     pos_inds = gt.eq(1).float()

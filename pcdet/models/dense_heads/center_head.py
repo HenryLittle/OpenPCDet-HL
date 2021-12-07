@@ -46,6 +46,7 @@ class SeparateHead(nn.Module):
 
 
 class CenterHead(nn.Module):
+
     def __init__(self, model_cfg, input_channels, num_class, class_names, grid_size, point_cloud_range, voxel_size,
                  predict_boxes_when_training=True):
         super().__init__()
@@ -126,6 +127,7 @@ class CenterHead(nn.Module):
         center_int = center.int()
         center_int_float = center_int.float()
 
+        # the size of the bbox width lengh height
         dx, dy, dz = gt_boxes[:, 3], gt_boxes[:, 4], gt_boxes[:, 5]
         dx = dx / self.voxel_size[0] / feature_map_stride
         dy = dy / self.voxel_size[1] / feature_map_stride
@@ -250,6 +252,7 @@ class CenterHead(nn.Module):
         return loss, tb_dict
 
     def generate_predicted_boxes(self, batch_size, pred_dicts):
+        # pred_dict: dict_keys(['center', 'center_z', 'dim', 'rot', 'hm'])
         post_process_cfg = self.model_cfg.POST_PROCESSING
         post_center_limit_range = torch.tensor(post_process_cfg.POST_CENTER_LIMIT_RANGE).cuda().float()
 
