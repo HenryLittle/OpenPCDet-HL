@@ -7,15 +7,19 @@ POINT_CLOUD_RANGE: [0, -40, -3, 70.4, 40, 1]
 DATA_SPLIT: {
     'train': train,
     'test': val
+    # 'test': test
 }
 
 INFO_PATH: {
     'train': [kitti_infos_train.pkl],
     'test': [kitti_infos_val.pkl],
+    # 'test': [kitti_infos_test.pkl]
 }
 
+
+# Optional data: ["points", "images", "depth_maps", "calib_matricies", "gt_boxes2d"]
 GET_ITEM_LIST: ["points"]
-FOV_POINTS_ONLY: True
+FOV_POINTS_ONLY: True # Only load Field of View points (as KITTI only has annotaions in FOV)
 
 DATA_AUGMENTOR:
     DISABLE_AUG_LIST: ['placeholder']

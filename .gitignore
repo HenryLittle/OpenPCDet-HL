@@ -16,3 +16,5 @@ venv/
 *.bin
 output
 version.py
+*.pcd
+*.ipynb

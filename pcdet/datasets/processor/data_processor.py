@@ -12,7 +12,14 @@ except:
     pass
 
 
+
 class VoxelGeneratorWrapper():
+    """
+        A wrapper around the [spconv VoxelGenerator]
+
+        self.grid_size: resolution of the voxel grid
+        self.voxel: the size of a single voxel
+    """
     def __init__(self, vsize_xyz, coors_range_xyz, num_point_features, max_num_points_per_voxel, max_num_voxels):
         try:
             from spconv.utils import VoxelGeneratorV2 as VoxelGenerator

@@ -46,7 +46,7 @@ class FrustumToVoxel(nn.Module):
 
         # Sample frustum volume to generate voxel volume
         voxel_features = self.sampler(input_features=batch_dict["frustum_features"],
-                                      grid=grid)  # (B, C, X, Y, Z)
+                                      grid=grid)  # B, C, X, Y, Z)
 
         # (B, C, X, Y, Z) -> (B, C, Z, Y, X)
         voxel_features = voxel_features.permute(0, 1, 4, 3, 2)

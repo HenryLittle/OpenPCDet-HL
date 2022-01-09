@@ -2,7 +2,7 @@ DATASET: 'NuScenesDataset'
 DATA_PATH: '/data4/lkz/nuscenes'
 # DATA_PATH: '../data/nuscenes'
 
-VERSION: 'v1.0'
+VERSION: 'v1.0-trainval'
 MAX_SWEEPS: 10
 PRED_VELOCITY: True
 SET_NAN_VELOCITY_TO_ZEROS: True

@@ -34,6 +34,26 @@ def project_to_image(project, points):
 
     return points_img, points_depth
 
+def project_to_image_no_depth(project, points):
+    """
+    Project points to image
+    Args:
+        project [torch.tensor(..., 3, 4)]: Projection matrix
+        points [torch.Tensor(..., 3)]: 3D points
+    Returns:
+        points_img [torch.Tensor(..., 2)]: Points in image
+    """
+    # Reshape tensors to expected shape
+    points = convert_points_to_homogeneous(points)
+    points = points.unsqueeze(dim=-1)
+    project = project.unsqueeze(dim=1)
+
+    # Transform points to image and get depths
+    points_t = project @ points
+    points_t = points_t.squeeze(dim=-1)
+    points_img = convert_points_from_homogeneous(points_t)
+
+    return points_img
 
 def normalize_coords(coords, shape):
     """

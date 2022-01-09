@@ -1,10 +1,12 @@
 from functools import partial
 
 import numpy as np
+from torchvision.transforms.transforms import ConvertImageDtype
 
 from ...utils import common_utils
 from . import augmentor_utils, database_sampler
 
+from torchvision import transforms
 
 class DataAugmentor(object):
     def __init__(self, root_path, augmentor_configs, class_names, logger=None):
@@ -44,11 +46,15 @@ class DataAugmentor(object):
         if data_dict is None:
             return partial(self.random_world_flip, config=config)
         gt_boxes, points = data_dict['gt_boxes'], data_dict['points']
+        images = data_dict["images"]
         for cur_axis in config['ALONG_AXIS_LIST']:
-            assert cur_axis in ['x', 'y']
-            gt_boxes, points = getattr(augmentor_utils, 'random_flip_along_%s' % cur_axis)(
-                gt_boxes, points,
+            assert cur_axis in ['x'] # disable y temp
+            enable = np.random.choice([False, True], replace=False, p=[0.5, 0.5])
+            gt_boxes, points = getattr(augmentor_utils, 'flip_along_%s' % cur_axis)(
+                enable, gt_boxes, points,
             )
+            if config['FLIP_IMAGE'] and enable:
+                data_dict["images"] = np.fliplr(images)
 
         data_dict['gt_boxes'] = gt_boxes
         data_dict['points'] = points
@@ -95,6 +101,16 @@ class DataAugmentor(object):
         data_dict['images'] = images
         data_dict['depth_maps'] = depth_maps
         data_dict['gt_boxes'] = gt_boxes
+        return data_dict
+
+    def normalize_image(self, data_dict=None, config=None):
+        if data_dict is None:
+            return partial(self.normalize_image, config=config)
+        images = data_dict["images"] # [H, W, C]
+        im_mean = images.mean(axis=(0, 1))
+        im_std = images.std(axis=(0, 1))
+        images = ((images - im_mean)/im_std) * config['STD'] + config['MEAN']
+        data_dict['images'] = images
         return data_dict
 
     def forward(self, data_dict):

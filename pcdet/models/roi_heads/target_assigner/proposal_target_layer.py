@@ -1,5 +1,6 @@
 import numpy as np
 import torch
+from torch._C import dtype
 import torch.nn as nn
 
 from ....ops.iou3d_nms import iou3d_nms_utils
@@ -145,7 +146,7 @@ class ProposalTargetLayer(nn.Module):
             rand_num = np.floor(np.random.rand(self.roi_sampler_cfg.ROI_PER_IMAGE) * fg_num_rois)
             rand_num = torch.from_numpy(rand_num).type_as(max_overlaps).long()
             fg_inds = fg_inds[rand_num]
-            bg_inds = []
+            bg_inds = torch.tensor([], dtype=torch.long).cuda(fg_inds.device)
 
         elif bg_num_rois > 0 and fg_num_rois == 0:
             # sampling bg
@@ -157,7 +158,9 @@ class ProposalTargetLayer(nn.Module):
             print('maxoverlaps:(min=%f, max=%f)' % (max_overlaps.min().item(), max_overlaps.max().item()))
             print('ERROR: FG=%d, BG=%d' % (fg_num_rois, bg_num_rois))
             raise NotImplementedError
-
+        # FIXME: expect Tensor but got List instead on certain data
+        if isinstance(fg_inds, list) or isinstance(bg_inds, list):
+            print("[WARN]", fg_num_rois, ' ', bg_num_rois)
         sampled_inds = torch.cat((fg_inds, bg_inds), dim=0)
         return sampled_inds
 

@@ -93,13 +93,14 @@ class FrustumGridGenerator(nn.Module):
         V_G = grid_to_lidar  # Voxel Grid -> LiDAR (4, 4)
         C_V = lidar_to_cam  # LiDAR -> Camera (B, 4, 4)
         I_C = cam_to_img  # Camera -> Image (B, 3, 4)
-        trans = C_V @ V_G
+        trans = C_V @ V_G # Matrix Multiplication
 
         # Reshape to match dimensions
         trans = trans.reshape(B, 1, 1, 4, 4)
         voxel_grid = voxel_grid.repeat_interleave(repeats=B, dim=0)
 
         # Transform to camera frame
+        # function provided by [Kornia]
         camera_grid = transform_points(trans_01=trans, points_1=voxel_grid)
 
         # Project to image

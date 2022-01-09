@@ -216,7 +216,7 @@ class DatasetTemplate(torch_data.Dataset):
                                            pad_width=pad_width,
                                            mode='constant',
                                            constant_values=pad_value)
-
+                        # assert not np.isnan(image_pad).any()
                         images.append(image_pad)
                     ret[key] = np.stack(images, axis=0)
                 else:

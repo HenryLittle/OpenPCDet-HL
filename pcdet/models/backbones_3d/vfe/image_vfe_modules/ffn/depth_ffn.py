@@ -55,7 +55,7 @@ class DepthFFN(nn.Module):
         # Channel reduce
         if self.channel_reduce is not None:
             image_features = self.channel_reduce(image_features)
-
+        batch_dict['caddn_image_features'] = image_features
         # Create image feature plane-sweep volume
         frustum_features = self.create_frustum_features(image_features=image_features,
                                                         depth_logits=depth_logits)
