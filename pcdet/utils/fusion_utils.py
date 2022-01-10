@@ -11,11 +11,11 @@ except Exception as e:
     pass
 
 from pcdet.utils import transform_utils
-
+from pcdet.utils.common_utils import rotate_points_along_z
 
 class ImageGridGenerator(nn.Module):
 
-    def __init__(self, voxel_indices, grid_size, pc_range, model_cfg):
+    def __init__(self, voxel_indices, grid_size, pc_range, noise_rotation, model_cfg):
         """
         Initializes Grid Generator for frustum features
         Args:
@@ -37,6 +37,7 @@ class ImageGridGenerator(nn.Module):
         self.grid_size = self.grid_size[[2, 1, 0]]
         self.pc_range = pc_range
         self.model_cfg = model_cfg
+        self.noise_rot = noise_rotation # used to counter rotation and restore aligment between Image and Voxel grid
         
         # Calculate voxel size
         pc_range = torch.as_tensor(pc_range).reshape(2, 3)
@@ -106,6 +107,9 @@ class ImageGridGenerator(nn.Module):
             #  xi[(xi[:, 0]==1).nonzero().squeeze(1)] https://discuss.pytorch.org/t/select-rows-of-the-tensor-whose-first-element-is-equal-to-some-value/1718
             voxel_grid_sample = self.voxel_grid[(self.voxel_grid[:, 0]==i).nonzero().squeeze(1)]
             voxel_grid_sample_xyz = voxel_grid_sample[:, 1:].unsqueeze(0) # [1, N, 3]
+            # counter the rotation noise
+            if self.noise_rot is not None:
+                voxel_grid_sample_xyz = rotate_points_along_z(voxel_grid_sample_xyz, -self.noise_rot[i].unsqueeze(0))
             t_trans = trans[i].unsqueeze(0) # [1, 4, 4]
             cam_grid = transform_points(trans_01=t_trans, points_1=voxel_grid_sample_xyz)
             t_I_C = I_C[i].unsqueeze(0) # [1, 3, 4]

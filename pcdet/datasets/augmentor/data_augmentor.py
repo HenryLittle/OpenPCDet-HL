@@ -46,15 +46,14 @@ class DataAugmentor(object):
         if data_dict is None:
             return partial(self.random_world_flip, config=config)
         gt_boxes, points = data_dict['gt_boxes'], data_dict['points']
-        images = data_dict["images"]
         for cur_axis in config['ALONG_AXIS_LIST']:
-            assert cur_axis in ['x'] # disable y temp
+            assert cur_axis in ['x', 'y'] # disable y temp
             enable = np.random.choice([False, True], replace=False, p=[0.5, 0.5])
             gt_boxes, points = getattr(augmentor_utils, 'flip_along_%s' % cur_axis)(
                 enable, gt_boxes, points,
             )
-            if config['FLIP_IMAGE'] and enable:
-                data_dict["images"] = np.fliplr(images)
+            if config['FLIP_IMAGE'] and cur_axis is 'x' and enable:
+                data_dict["images"] = np.fliplr(data_dict["images"])
 
         data_dict['gt_boxes'] = gt_boxes
         data_dict['points'] = points
@@ -66,12 +65,13 @@ class DataAugmentor(object):
         rot_range = config['WORLD_ROT_ANGLE']
         if not isinstance(rot_range, list):
             rot_range = [-rot_range, rot_range]
-        gt_boxes, points = augmentor_utils.global_rotation(
+        gt_boxes, points, noise_rotation = augmentor_utils.global_rotation(
             data_dict['gt_boxes'], data_dict['points'], rot_range=rot_range
         )
 
         data_dict['gt_boxes'] = gt_boxes
         data_dict['points'] = points
+        data_dict['noise_rotation'] = noise_rotation
         return data_dict
 
     def random_world_scaling(self, data_dict=None, config=None):

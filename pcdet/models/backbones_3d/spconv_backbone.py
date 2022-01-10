@@ -270,8 +270,11 @@ class FusionBackBone8x(nn.Module):
 
     def sample_image_feature(self, x, layer, batch_dict):
         image_feature = batch_dict['image_fpn'][layer]
+        noise_rotation = None
+        if 'noise_rotation' in batch_dict:
+            noise_rotation = batch_dict['noise_rotation']
 
-        grid_gen = ImageGridGenerator(x.indices[:, [0, 3, 2, 1]], x.spatial_shape, self.pc_range, self.model_cfg)
+        grid_gen = ImageGridGenerator(x.indices[:, [0, 3, 2, 1]], x.spatial_shape, self.pc_range, noise_rotation, self.model_cfg)
         grid_list = grid_gen(lidar_to_cam=batch_dict['trans_lidar_to_cam'],
                                    cam_to_img=batch_dict['trans_cam_to_img'],
                                    image_shape=batch_dict['image_shape'])

@@ -9,6 +9,7 @@ class MeanVFE(VFETemplate):
         self.num_point_features = num_point_features
 
     def get_output_feature_dim(self):
+        # 4 same as C, specified by length of [used_feature_list]
         return self.num_point_features
 
     def forward(self, batch_dict, **kwargs):
@@ -22,6 +23,8 @@ class MeanVFE(VFETemplate):
         Returns:
             vfe_features: (num_voxels, C)
         """
+        # differen from paper description but works very well. LOL
+        # [N, 5, 4{XYZR}] [N]
         voxel_features, voxel_num_points = batch_dict['voxels'], batch_dict['voxel_num_points']
         points_mean = voxel_features[:, :, :].sum(dim=1, keepdim=False)
         normalizer = torch.clamp_min(voxel_num_points.view(-1, 1), min=1.0).type_as(voxel_features)
