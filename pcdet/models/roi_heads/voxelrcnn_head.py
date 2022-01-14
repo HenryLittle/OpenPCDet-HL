@@ -127,6 +127,8 @@ class VoxelRCNNHead(RoIHeadTemplate):
     #             if m.bias is not None:
     #                 nn.init.constant_(m.bias, 0)
     #     nn.init.normal_(self.reg_layers[-1].weight, mean=0, std=0.001)
+
+
     
     def roi_grid_pool(self, batch_dict):
         """
@@ -161,6 +163,9 @@ class VoxelRCNNHead(RoIHeadTemplate):
         # roi_grid_coords_z = (roi_grid_xyz[:, :, 2:3] - self.point_cloud_range[2]) // self.voxel_size[2]
         # roi_grid_coords: (B, Nx6x6x6, 3)
         roi_grid_coords = torch.cat([roi_grid_coords_x, roi_grid_coords_y, roi_grid_coords_z], dim=-1)
+
+        if 'gen_pesudo_voxel' in batch_dict and batch_dict['gen_pesudo_voxel']:
+            return roi_grid_xyz, roi_grid_coords[ :, :, [2,1,0]]
 
         batch_idx = rois.new_zeros(batch_size, roi_grid_coords.shape[1], 1)
         for bs_idx in range(batch_size):
@@ -249,6 +254,7 @@ class VoxelRCNNHead(RoIHeadTemplate):
         :param input_data: input dict
         :return:
         """
+        # breakpoint()
         # [proposal_layer] provides by ROIHead Template, does the work after DenseHead
         # - batch_size
         # - batch_box_preds
@@ -262,8 +268,11 @@ class VoxelRCNNHead(RoIHeadTemplate):
             batch_dict['rois'] = targets_dict['rois']
             batch_dict['roi_labels'] = targets_dict['roi_labels']
 
-        # RoI aware pooling
-        pooled_features = self.roi_grid_pool(batch_dict)  # (BxN, 6x6x6, C)
+        if 'gen_pesudo_voxel' in batch_dict and batch_dict['gen_pesudo_voxel']:
+            return self.roi_grid_pool(batch_dict)  # (BxN, 6x6x6, C)
+        else:
+            # RoI aware pooling
+            pooled_features = self.roi_grid_pool(batch_dict)  # (BxN, 6x6x6, C)
 
         # Box Refinement
         pooled_features = pooled_features.view(pooled_features.size(0), -1)

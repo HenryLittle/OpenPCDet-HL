@@ -11,6 +11,7 @@ class ImageResNetVFE(VFETemplate):
         self.num_point_features = num_point_features
         # [x_min, y_min, z_min, x_max, y_max, z_max]
         self.pc_range = point_cloud_range 
+        self.freeze = model_cfg.FREEZE_BACKBONE
 
         self.resnet = HookedResNet(resnet=model_cfg.BACKBONE,
         output_layers=model_cfg.OUTPUT_LAYERS)
@@ -24,7 +25,10 @@ class ImageResNetVFE(VFETemplate):
 
         # just get feature pyramid shape {key:[B, C, H, W]}
         batch_dict['images'] = torch.nan_to_num(batch_dict['images'])
-        with torch.no_grad():
+        if self.freeze:
+            with torch.no_grad():
+                _, image_fpn = self.resnet(batch_dict['images'])
+        else:
             _, image_fpn = self.resnet(batch_dict['images'])
 
         batch_dict = self.mean_vfe(batch_dict)
