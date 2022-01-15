@@ -260,17 +260,25 @@ class VoxelRCNNHead(RoIHeadTemplate):
         # - batch_box_preds
         # - batch_cls_preds
         # + rois, roi_scores, roi_labels
-        targets_dict = self.proposal_layer(
-            batch_dict, nms_config=self.model_cfg.NMS_CONFIG['TRAIN' if self.training else 'TEST']
-        )
-        if self.training:
-            targets_dict = self.assign_targets(batch_dict)
-            batch_dict['rois'] = targets_dict['rois']
-            batch_dict['roi_labels'] = targets_dict['roi_labels']
+        
 
         if 'gen_pesudo_voxel' in batch_dict and batch_dict['gen_pesudo_voxel']:
+            targets_dict = self.proposal_layer(
+                batch_dict, nms_config=self.model_cfg.NMS_CONFIG['PESUDO']
+            )
+            if self.training: # sub sample rois as ROI_PER_IMAGE specifies
+                targets_dict = self.assign_targets(batch_dict)
+                batch_dict['rois'] = targets_dict['rois']
+                batch_dict['roi_labels'] = targets_dict['roi_labels']
             return self.roi_grid_pool(batch_dict)  # (BxN, 6x6x6, C)
-        else:
+        else: # normal process
+            targets_dict = self.proposal_layer(
+                batch_dict, nms_config=self.model_cfg.NMS_CONFIG['TRAIN' if self.training else 'TEST']
+            )
+            if self.training:
+                targets_dict = self.assign_targets(batch_dict)
+                batch_dict['rois'] = targets_dict['rois']
+                batch_dict['roi_labels'] = targets_dict['roi_labels']
             # RoI aware pooling
             pooled_features = self.roi_grid_pool(batch_dict)  # (BxN, 6x6x6, C)
 

@@ -148,6 +148,12 @@ MODEL:
         DP_RATIO: 0.3
 
         NMS_CONFIG:
+            PESUDO: 
+                NMS_TYPE: nms_gpu
+                MULTI_CLASSES_NMS: False
+                NMS_PRE_MAXSIZE: 9000
+                NMS_POST_MAXSIZE: 256  # will be downsampled to ROI_PER_IMAGE{128} regardlessly 
+                NMS_THRESH: 0.7
             TRAIN:
                 NMS_TYPE: nms_gpu
                 MULTI_CLASSES_NMS: False

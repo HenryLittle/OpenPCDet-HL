@@ -268,6 +268,26 @@ class FusionBackBone8x(nn.Module):
         o3d_pcd = o3d.geometry.PointCloud(o3d.utility.Vector3dVector(od))
         return o3d.io.write_point_cloud(output, o3d_pcd)
 
+    # FusionBackBone8x.viz_grid_to_image(0, batch_dict, grid_list)
+    @staticmethod
+    def viz_grid_to_image(idx, batch_dict, grid_list):
+        import numpy as np
+        import torchvision
+        image = batch_dict['images'][idx] # [C H W]
+        grid = grid_list[idx] # [NPoints, 2]
+        color = np.array([163, 190, 140])/255.0
+        color = torch.from_numpy(color).to(image.device)
+        for p in range(grid.shape[0]):
+            pt = grid[p]
+            if pt[0] > 1.0 or pt[0] < -1.0 or pt[1] > 1.0 or pt[1] < -1.0:
+                continue
+            px = ((pt[0] + 1.0)/2.0 * image.shape[2]).floor().type(torch.int)
+            py = ((pt[1] + 1.0)/2.0 * image.shape[1]).floor().type(torch.int)
+            image[:,py,px] = image[:,py,px] * 0.5 + color * 0.5
+        image = image.detach().cpu()
+        torchvision.utils.save_image(image, f'image_viz_{idx}.png')
+
+
     def sample_image_feature(self, x, layer, batch_dict):
         image_feature = batch_dict['image_fpn'][layer]
         noise_rotation = None
@@ -284,6 +304,7 @@ class FusionBackBone8x(nn.Module):
         sampled_image_feature = torch.cat(sampled_image_feature)
         img_feat = self.fuse_linear[layer](sampled_image_feature)
         return img_feat
+
 
     def forward(self, batch_dict):
         """
