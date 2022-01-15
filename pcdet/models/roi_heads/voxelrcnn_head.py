@@ -5,9 +5,9 @@ from ...utils import common_utils
 from .roi_head_template import RoIHeadTemplate
 
 
-from vit_pytorch.vit import ViT
-from vit_pytorch.extractor import Extractor
-from einops import rearrange
+# from vit_pytorch.vit import ViT
+# from vit_pytorch.extractor import Extractor
+# from einops import rearrange
 
 class VoxelRCNNHead(RoIHeadTemplate):
     def __init__(self, backbone_channels, model_cfg, point_cloud_range, voxel_size, num_class=1, **kwargs):
@@ -251,9 +251,11 @@ class VoxelRCNNHead(RoIHeadTemplate):
         """
         # [proposal_layer] provides by ROIHead Template, does the work after DenseHead
         # - batch_size
-        # - batch_box_preds
-        # - batch_cls_preds
-        # + rois, roi_scores, roi_labels
+        # - batch_box_preds [6, 70400, 7]
+        # - batch_cls_preds [B, 70400, C{1~3}]
+        # + rois [6, 512, 7]
+        # + roi_scores [6, 512] {-3 ~ 5}
+        # + roi_labels [6, 512]
         targets_dict = self.proposal_layer(
             batch_dict, nms_config=self.model_cfg.NMS_CONFIG['TRAIN' if self.training else 'TEST']
         )
@@ -274,7 +276,6 @@ class VoxelRCNNHead(RoIHeadTemplate):
         # # output of the transformer module
         # batch_dict['images'] = torch.nan_to_num(batch_dict['images']) # [B, C, 375, 1242] not consistent
         # batch_dict['images'] = batch_dict['images'][:, :, :375, :1242]
-        # # breakpoint()
         # _, img_patch_embedding = self.vit(batch_dict['images']) # [18, 406, 256]
         # img_patch_embedding = rearrange(img_patch_embedding, 'B D C -> D B C')
         # # Attention bottle-neck

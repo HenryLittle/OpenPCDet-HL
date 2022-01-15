@@ -268,17 +268,37 @@ class FusionBackBone8x(nn.Module):
         o3d_pcd = o3d.geometry.PointCloud(o3d.utility.Vector3dVector(od))
         return o3d.io.write_point_cloud(output, o3d_pcd)
 
+
+    # FusionBackBone8x.viz_grid_to_image(0, batch_dict, grid_list)
+    @staticmethod
+    def viz_grid_to_image(idx, batch_dict, grid_list):
+        import numpy as np
+        import torchvision
+        image = batch_dict['images'][idx] * 0.5 # [C H W]
+        grid = grid_list[idx] # [NPoints, 2]         
+        color = np.array([163, 190, 140])/255.0
+        color = torch.from_numpy(color).to(image.device)
+        for p in range(grid.shape[0]):
+            pt = grid[p]
+            if pt[0] > 1.0 or pt[0] < -1.0 or pt[1] > 1.0 or pt[1] < -1.0:
+                continue
+            px = ((pt[0] + 1.0)/2.0 * image.shape[2]).floor().type(torch.int)
+            py = ((pt[1] + 1.0)/2.0 * image.shape[1]).floor().type(torch.int)
+            image[:,py,px] = image[:,py,px] * 0.2 + color * 0.8
+        image = image.detach().cpu()
+        torchvision.utils.save_image(image, f'image_viz_{idx}.png')
+
+
     def sample_image_feature(self, x, layer, batch_dict):
         image_feature = batch_dict['image_fpn'][layer]
         noise_rotation = None
         if 'noise_rotation' in batch_dict:
             noise_rotation = batch_dict['noise_rotation']
-
+        # x -> ZYX
         grid_gen = ImageGridGenerator(x.indices[:, [0, 3, 2, 1]], x.spatial_shape, self.pc_range, noise_rotation, self.model_cfg)
         grid_list = grid_gen(lidar_to_cam=batch_dict['trans_lidar_to_cam'],
                                    cam_to_img=batch_dict['trans_cam_to_img'],
                                    image_shape=batch_dict['image_shape'])
-    
         sampled_image_feature = self.sampler(input_features=image_feature,
                                       grid=grid_list)
         sampled_image_feature = torch.cat(sampled_image_feature)

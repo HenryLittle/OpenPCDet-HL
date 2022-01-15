@@ -45,21 +45,14 @@ class ImageGridGenerator(nn.Module):
         self.pc_max = pc_range[1]
         self.voxel_size = (self.pc_max - self.pc_min) / self.grid_size
 
-        # Create voxel grid
-        self.depth, self.width, self.height = self.grid_size.int()
-        # self.voxel_grid = create_meshgrid3d(depth=self.depth,
-        #                                                  height=self.height,
-        #                                                  width=self.width,
-        #                                                  normalized_coordinates=False)
 
         # self.voxel_grid = self.voxel_grid.permute(0, 1, 3, 2, 4)  # XZY-> XYZ
         self.voxel_grid = voxel_indices.type(self.dtype) # [N, BXYZ]
-
+        
         # Add offsets to center of voxel
-        # self.voxel_grid[:, 1:] += 0.5
-        # if model_cfg.Z_JITTER:
-        #     z_max = self.voxel_grid[:,3].max()
-        #     self.voxel_grid[:,3] += torch.randint(-model_cfg.Z_JITTER, model_cfg.Z_JITTER, (self.voxel_grid.shape[0],)).to(self.voxel_grid.device)
+        self.voxel_grid[:, 1:] += 0.5
+        # translate the points to LiDAR
+        # == VoxelCenter * voxel_size + pc_min
         self.grid_to_lidar = self.grid_to_lidar_unproject(pc_min=self.pc_min,
                                                           voxel_size=self.voxel_size)
 
@@ -107,11 +100,17 @@ class ImageGridGenerator(nn.Module):
             #  xi[(xi[:, 0]==1).nonzero().squeeze(1)] https://discuss.pytorch.org/t/select-rows-of-the-tensor-whose-first-element-is-equal-to-some-value/1718
             voxel_grid_sample = self.voxel_grid[(self.voxel_grid[:, 0]==i).nonzero().squeeze(1)]
             voxel_grid_sample_xyz = voxel_grid_sample[:, 1:].unsqueeze(0) # [1, N, 3]
-            # counter the rotation noise
+            t_V2L = V_G.unsqueeze(0) # [1, 4, 4]
+            # VoxelGrid to LiDAR
+            voxel_grid_sample_xyz = transform_points(trans_01=t_V2L, points_1=voxel_grid_sample_xyz)
+            # counter the rotation noise in LiDAR Coord
             if self.noise_rot is not None:
                 voxel_grid_sample_xyz = rotate_points_along_z(voxel_grid_sample_xyz, -self.noise_rot[i].unsqueeze(0))
-            t_trans = trans[i].unsqueeze(0) # [1, 4, 4]
-            cam_grid = transform_points(trans_01=t_trans, points_1=voxel_grid_sample_xyz)
+
+            # t_trans = trans[i].unsqueeze(0) # [1, 4, 4]
+            t_L2C = C_V[i].unsqueeze(0) # [1, 4, 4]
+            cam_grid = transform_points(trans_01=t_L2C, points_1=voxel_grid_sample_xyz)
+
             t_I_C = I_C[i].unsqueeze(0) # [1, 3, 4]
             image_grid = transform_utils.project_to_image_no_depth(project=t_I_C, points=cam_grid) # [1, N, 2]
             image_grid = transform_utils.normalize_coords(coords=image_grid, shape=image_shape)
@@ -121,7 +120,6 @@ class ImageGridGenerator(nn.Module):
 
         # Reshape to match dimensions
         # trans = trans.reshape(B, 4, 4)
-        # breakpoint()
         # voxel_grid = voxel_grid.repeat_interleave(repeats=B, dim=0)
 
         # Transform to camera frame

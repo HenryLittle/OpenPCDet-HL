@@ -52,7 +52,7 @@ class DataAugmentor(object):
             gt_boxes, points = getattr(augmentor_utils, 'flip_along_%s' % cur_axis)(
                 enable, gt_boxes, points,
             )
-            if config['FLIP_IMAGE'] and cur_axis is 'x' and enable:
+            if config['FLIP_IMAGE'] and cur_axis == 'x' and enable:
                 data_dict["images"] = np.fliplr(data_dict["images"])
 
         data_dict['gt_boxes'] = gt_boxes
