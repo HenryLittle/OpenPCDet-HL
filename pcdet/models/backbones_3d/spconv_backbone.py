@@ -268,7 +268,6 @@ class FusionBackBone8x(nn.Module):
         o3d_pcd = o3d.geometry.PointCloud(o3d.utility.Vector3dVector(od))
         return o3d.io.write_point_cloud(output, o3d_pcd)
 
-
     # FusionBackBone8x.viz_grid_to_image(0, batch_dict, grid_list)
     @staticmethod
     def viz_grid_to_image(idx, batch_dict, grid_list):
@@ -304,6 +303,7 @@ class FusionBackBone8x(nn.Module):
         sampled_image_feature = torch.cat(sampled_image_feature)
         img_feat = self.fuse_linear[layer](sampled_image_feature)
         return img_feat
+
 
     def forward(self, batch_dict):
         """

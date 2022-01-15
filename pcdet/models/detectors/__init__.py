@@ -8,6 +8,7 @@ from .second_net_iou import SECONDNetIoU
 from .caddn import CaDDN
 from .voxel_rcnn import VoxelRCNN
 from .centerpoint import CenterPoint, CenterPointRCNN
+from .pesudo_voxel_rcnn import PesudoVoxelRCNN
 
 __all__ = {
     'Detector3DTemplate': Detector3DTemplate,
@@ -20,7 +21,8 @@ __all__ = {
     'CaDDN': CaDDN,
     'VoxelRCNN': VoxelRCNN,
     'CenterPoint': CenterPoint,
-    'CenterPointRCNN': CenterPointRCNN
+    'CenterPointRCNN': CenterPointRCNN,
+    'PesudoVoxelRCNN': PesudoVoxelRCNN,
 }
 
 
