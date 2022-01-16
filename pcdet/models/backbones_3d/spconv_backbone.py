@@ -273,8 +273,8 @@ class FusionBackBone8x(nn.Module):
     def viz_grid_to_image(idx, batch_dict, grid_list):
         import numpy as np
         import torchvision
-        image = batch_dict['images'][idx] # [C H W]
-        grid = grid_list[idx] # [NPoints, 2]
+        image = batch_dict['images'][idx] * 0.5 # [C H W]
+        grid = grid_list[idx] # [NPoints, 2]         
         color = np.array([163, 190, 140])/255.0
         color = torch.from_numpy(color).to(image.device)
         for p in range(grid.shape[0]):
@@ -283,7 +283,7 @@ class FusionBackBone8x(nn.Module):
                 continue
             px = ((pt[0] + 1.0)/2.0 * image.shape[2]).floor().type(torch.int)
             py = ((pt[1] + 1.0)/2.0 * image.shape[1]).floor().type(torch.int)
-            image[:,py,px] = image[:,py,px] * 0.5 + color * 0.5
+            image[:,py,px] = image[:,py,px] * 0.2 + color * 0.8
         image = image.detach().cpu()
         torchvision.utils.save_image(image, f'image_viz_{idx}.png')
 
@@ -298,7 +298,7 @@ class FusionBackBone8x(nn.Module):
         grid_list = grid_gen(lidar_to_cam=batch_dict['trans_lidar_to_cam'],
                                    cam_to_img=batch_dict['trans_cam_to_img'],
                                    image_shape=batch_dict['image_shape'])
-    
+        breakpoint()
         sampled_image_feature = self.sampler(input_features=image_feature,
                                       grid=grid_list)
         sampled_image_feature = torch.cat(sampled_image_feature)
