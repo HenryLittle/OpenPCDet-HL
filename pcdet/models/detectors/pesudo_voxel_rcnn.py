@@ -29,6 +29,9 @@ class PesudoVoxelRCNN(Detector3DTemplate):
         for cur_module in self.module_list[0:5]:
             temp_batch_dict= cur_module(temp_batch_dict)
         pesudo_voxels, pesudo_coords = self.module_list[5](temp_batch_dict)
+
+        pesudo_ratio = pesudo_voxels.shape[0]/batch_dict['voxel_features'].shape[0]
+
         # convert coordinates to int 
         pesudo_coords.type(torch.int)
         pesudo_coords = pesudo_coords.clamp(0)
@@ -78,15 +81,14 @@ class PesudoVoxelRCNN(Detector3DTemplate):
         
         # batch_dict['voxel_features'] = batch_dict['voxel_features'][200:]
         # batch_dict['voxel_coords'] = batch_dict['voxel_coords'][200:]
-
         batch_dict.pop('gen_pesudo_voxel')
-        return batch_dict
+        return batch_dict, pesudo_ratio
 
 
     def forward(self, batch_dict):
         # we need to run fused 3d backbone twice self.module_list[0:5]
         with torch.no_grad():
-            batch_dict = self.gen_pesudo_voxel(batch_dict)
+            batch_dict, pesudo_ratio = self.gen_pesudo_voxel(batch_dict)
             
 
         # run the model with pesudo voxels
@@ -101,6 +103,7 @@ class PesudoVoxelRCNN(Detector3DTemplate):
             ret_dict = {
                 'loss': loss
             }
+            disp_dict['pR'] = pesudo_ratio
             return ret_dict, tb_dict, disp_dict
         else:
             pred_dicts, recall_dicts = self.post_processing(batch_dict)

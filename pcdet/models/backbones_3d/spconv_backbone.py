@@ -2,6 +2,7 @@ from functools import partial
 import torch
 
 import torch.nn as nn
+import torch.nn.functional as F
 
 from ...utils.spconv_utils import replace_feature, spconv
 from ...utils.fusion_utils import ImageGridGenerator, Sampler
@@ -258,6 +259,7 @@ class FusionBackBone8x(nn.Module):
             self.fuse_linear[l] = nn.Sequential(
                 nn.Linear(channel[0], channel[1]),
                 nn.BatchNorm1d(channel[1], eps=1e-3, momentum=0.01),
+                nn.Dropout(p=0.3),
             )
 
     @staticmethod
@@ -298,7 +300,6 @@ class FusionBackBone8x(nn.Module):
         grid_list = grid_gen(lidar_to_cam=batch_dict['trans_lidar_to_cam'],
                                    cam_to_img=batch_dict['trans_cam_to_img'],
                                    image_shape=batch_dict['image_shape'])
-        breakpoint()
         sampled_image_feature = self.sampler(input_features=image_feature,
                                       grid=grid_list)
         sampled_image_feature = torch.cat(sampled_image_feature)
@@ -327,21 +328,21 @@ class FusionBackBone8x(nn.Module):
         )
 
         x = self.conv_input(input_sp_tensor) # 16 [41, 1600, 1408] ZYX
+
         img_feat_1 = self.sample_image_feature(x, 'layer1', batch_dict)
         x = replace_feature(x, x.features + img_feat_1)
-
         x_conv1 = self.conv1(x)       # 16 [41, 1600, 1408]
+
         img_feat_2 = self.sample_image_feature(x_conv1, 'layer2', batch_dict)
         x_conv1 = replace_feature(x_conv1, x_conv1.features + img_feat_2)
-
         x_conv2 = self.conv2(x_conv1) # 32 [21, 800, 704]
+
         img_feat_3 = self.sample_image_feature(x_conv2, 'layer3', batch_dict)
         x_conv2 = replace_feature(x_conv2, x_conv2.features + img_feat_3)
-
         x_conv3 = self.conv3(x_conv2) # 64 [11, 400, 352]
+
         img_feat_4 = self.sample_image_feature(x_conv3, 'layer4', batch_dict)
         x_conv3 = replace_feature(x_conv3, x_conv3.features + img_feat_4)
-
         x_conv4 = self.conv4(x_conv3) # 64 [5, 200, 176]
         # for detection head
         # [200, 176, 5] -> [200, 176, 2]

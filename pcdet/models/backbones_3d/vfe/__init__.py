@@ -2,7 +2,7 @@ from .mean_vfe import MeanVFE
 from .pillar_vfe import PillarVFE
 from .image_vfe import ImageVFE
 from .vfe_template import VFETemplate
-from .fusion_vfe import ImageResNetVFE
+from .fusion_vfe import ImageResNetVFE, ImageMaskRCNNVFE
 
 __all__ = {
     'VFETemplate': VFETemplate,
@@ -10,6 +10,7 @@ __all__ = {
     'PillarVFE': PillarVFE,
     'ImageVFE': ImageVFE,
     'ImageResNetVFE': ImageResNetVFE,
+    'ImageMaskRCNNVFE': ImageMaskRCNNVFE,
 }
 
 

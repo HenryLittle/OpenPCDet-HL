@@ -128,8 +128,28 @@ class VoxelRCNNHead(RoIHeadTemplate):
     #                 nn.init.constant_(m.bias, 0)
     #     nn.init.normal_(self.reg_layers[-1].weight, mean=0, std=0.001)
 
+    def gen_pesudo_voxel(self, rois, batch_size):
+        
+        roi_grid_xyz, _ = self.get_global_grid_points_of_roi(
+            rois, grid_size=self.pool_cfg.GRID_SIZE
+        )  # (BxN, 6x6x6, 3)
+        # roi_grid_xyz: (B, Nx6x6x6, 3)
+        roi_grid_xyz = roi_grid_xyz.view(batch_size, -1, 3)  
 
+        # compute the voxel coordinates of grid points
+        roi_grid_coords_x = torch.div(roi_grid_xyz[:, :, 0:1] - self.point_cloud_range[0], self.voxel_size[0], rounding_mode='floor')
+        roi_grid_coords_y = torch.div(roi_grid_xyz[:, :, 1:2] - self.point_cloud_range[1], self.voxel_size[1], rounding_mode='floor')
+        roi_grid_coords_z = torch.div(roi_grid_xyz[:, :, 2:3] - self.point_cloud_range[2], self.voxel_size[2], rounding_mode='floor')
+
+        # roi_grid_coords_x = (roi_grid_xyz[:, :, 0:1] - self.point_cloud_range[0]) // self.voxel_size[0]
+        # roi_grid_coords_y = (roi_grid_xyz[:, :, 1:2] - self.point_cloud_range[1]) // self.voxel_size[1]
+        # roi_grid_coords_z = (roi_grid_xyz[:, :, 2:3] - self.point_cloud_range[2]) // self.voxel_size[2]
+        # roi_grid_coords: (B, Nx6x6x6, 3)
+        roi_grid_coords = torch.cat([roi_grid_coords_x, roi_grid_coords_y, roi_grid_coords_z], dim=-1)
+
+        return roi_grid_xyz, roi_grid_coords[ :, :, [2,1,0]]
     
+
     def roi_grid_pool(self, batch_dict):
         """
         Args:
@@ -164,8 +184,6 @@ class VoxelRCNNHead(RoIHeadTemplate):
         # roi_grid_coords: (B, Nx6x6x6, 3)
         roi_grid_coords = torch.cat([roi_grid_coords_x, roi_grid_coords_y, roi_grid_coords_z], dim=-1)
 
-        if 'gen_pesudo_voxel' in batch_dict and batch_dict['gen_pesudo_voxel']:
-            return roi_grid_xyz, roi_grid_coords[ :, :, [2,1,0]]
 
         batch_idx = rois.new_zeros(batch_size, roi_grid_coords.shape[1], 1)
         for bs_idx in range(batch_size):
@@ -264,13 +282,18 @@ class VoxelRCNNHead(RoIHeadTemplate):
 
         if 'gen_pesudo_voxel' in batch_dict and batch_dict['gen_pesudo_voxel']:
             targets_dict = self.proposal_layer(
-                batch_dict, nms_config=self.model_cfg.NMS_CONFIG['PESUDO']
+                batch_dict, nms_config=self.model_cfg.PESUDO['NMS_CONFIG']
             )
             if self.training: # sub sample rois as ROI_PER_IMAGE specifies
                 targets_dict = self.assign_targets(batch_dict)
                 batch_dict['rois'] = targets_dict['rois']
                 batch_dict['roi_labels'] = targets_dict['roi_labels']
-            return self.roi_grid_pool(batch_dict)  # (BxN, 6x6x6, C)
+                batch_dict['roi_scores'] = targets_dict['roi_scores']
+            # Filter again according to ROI_THRESH
+            # roi_idx = (batch_dict['roi_scores'] >= self.model_cfg.PESUDO['ROI_SCORE_THRESH']).nonzero()
+            _, tk_idx = batch_dict['roi_scores'].topk(self.model_cfg.PESUDO['ROI_TOPK'], dim=1)
+            temp_rois = batch_dict['rois'][torch.arange(batch_dict['rois'].shape[0]).unsqueeze(-1), tk_idx]
+            return self.gen_pesudo_voxel(temp_rois, batch_dict['batch_size'])  # (BxN, 6x6x6, C)
         else: # normal process
             targets_dict = self.proposal_layer(
                 batch_dict, nms_config=self.model_cfg.NMS_CONFIG['TRAIN' if self.training else 'TEST']
