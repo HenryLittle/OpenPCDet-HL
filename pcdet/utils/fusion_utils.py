@@ -45,11 +45,14 @@ class ImageGridGenerator(nn.Module):
         self.pc_max = pc_range[1]
         self.voxel_size = (self.pc_max - self.pc_min) / self.grid_size
 
+
         # self.voxel_grid = self.voxel_grid.permute(0, 1, 3, 2, 4)  # XZY-> XYZ
         self.voxel_grid = voxel_indices.type(self.dtype) # [N, BXYZ]
+        
         # Add offsets to center of voxel
         self.voxel_grid[:, 1:] += 0.5
-        
+        # translate the points to LiDAR
+        # == VoxelCenter * voxel_size + pc_min
         self.grid_to_lidar = self.grid_to_lidar_unproject(pc_min=self.pc_min,
                                                           voxel_size=self.voxel_size)
 
@@ -117,7 +120,6 @@ class ImageGridGenerator(nn.Module):
 
         # Reshape to match dimensions
         # trans = trans.reshape(B, 4, 4)
-        # breakpoint()
         # voxel_grid = voxel_grid.repeat_interleave(repeats=B, dim=0)
 
         # Transform to camera frame

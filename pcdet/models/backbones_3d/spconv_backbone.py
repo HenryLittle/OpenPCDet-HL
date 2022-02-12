@@ -295,7 +295,7 @@ class FusionBackBone8x(nn.Module):
         noise_rotation = None
         if 'noise_rotation' in batch_dict:
             noise_rotation = batch_dict['noise_rotation']
-
+        # x -> ZYX
         grid_gen = ImageGridGenerator(x.indices[:, [0, 3, 2, 1]], x.spatial_shape, self.pc_range, noise_rotation, self.model_cfg)
         grid_list = grid_gen(lidar_to_cam=batch_dict['trans_lidar_to_cam'],
                                    cam_to_img=batch_dict['trans_cam_to_img'],

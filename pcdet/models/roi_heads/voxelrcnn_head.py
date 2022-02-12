@@ -5,9 +5,9 @@ from ...utils import common_utils
 from .roi_head_template import RoIHeadTemplate
 
 
-from vit_pytorch.vit import ViT
-from vit_pytorch.extractor import Extractor
-from einops import rearrange
+# from vit_pytorch.vit import ViT
+# from vit_pytorch.extractor import Extractor
+# from einops import rearrange
 
 class VoxelRCNNHead(RoIHeadTemplate):
     def __init__(self, backbone_channels, model_cfg, point_cloud_range, voxel_size, num_class=1, **kwargs):
@@ -314,7 +314,6 @@ class VoxelRCNNHead(RoIHeadTemplate):
         # # output of the transformer module
         # batch_dict['images'] = torch.nan_to_num(batch_dict['images']) # [B, C, 375, 1242] not consistent
         # batch_dict['images'] = batch_dict['images'][:, :, :375, :1242]
-        # # breakpoint()
         # _, img_patch_embedding = self.vit(batch_dict['images']) # [18, 406, 256]
         # img_patch_embedding = rearrange(img_patch_embedding, 'B D C -> D B C')
         # # Attention bottle-neck
